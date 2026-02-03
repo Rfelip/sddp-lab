@@ -121,6 +121,28 @@ function __generate_saa(
     return out
 end
 
+function __generate_saa(
+    rng::AbstractRNG, s::Naive, initial_season::Integer, N::Integer, B::Vector{Integer}
+    )::Vector{Vector{Vector{Float64}}}
+    size_s = size(s)    
+    out = [[zeros(size_s[1] * b) for b in B] for n in range(1, N)]
+
+    for n in range(1, N)
+        m = (n + initial_season - 1)
+
+        # this + 1e-5 is a trick to allow cycling over the seasons -- might be worth some
+        # optimization in the future
+        season = m - size_s[2] * Int(div(m, size_s[2] + 1e-5))
+        D = __build_mvdist(s, season)
+
+        for b in range(1, B[n])
+            sim = rand(rng, D, 1)
+            out[n][b] .+= sim
+        end
+    end
+
+    return out
+end
 # function generate_saa(s::Naive, initial_season::Integer, N::Integer, B::Integer)
 #     return __generate_saa(Random.default_rng(), s, initial_season, N, B)
 # end

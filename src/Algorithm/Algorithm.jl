@@ -42,6 +42,7 @@ end
 struct AlgorithmData <: InputModule
     graph::ScenarioGraph
     horizon::Horizon
+    cut_type::Symbol
 end
 
 # GENERAL METHODS ------------------------------------------------------------------------
@@ -80,6 +81,7 @@ export AlgorithmData,
     ScenarioGraph,
     get_algorithm,
     get_number_of_stages,
+    get_cut_type,
     generate_scenario_graph,
     generate_sampler
 

@@ -14,8 +14,17 @@ function __build_model(files::Vector{InputModule}, optimizer)::SDDP.PolicyGraph
     @info "Compiling model"
     graph = __build_graph(files)
     sp_builder = __generate_subproblem_builder(files)
+    
+    algo = get_algorithm(files)
+    cut_type_sym = get_cut_type(algo)
+    cut_type = (cut_type_sym == :Multi) ? SDDP.MULTI_CUT : SDDP.SINGLE_CUT
+    
     model = SDDP.PolicyGraph(
-        sp_builder, graph; sense = :Min, lower_bound = 0.0, optimizer = optimizer
+        sp_builder, graph; 
+        sense = :Min, 
+        lower_bound = 0.0, 
+        optimizer = optimizer,
+        cut_type = cut_type
     )
 
     return model
@@ -29,6 +38,10 @@ function __generate_subproblem_builder(files::Vector{InputModule})::Function
     set_seed!(scenarios)
 
     SAA = generate_saa(scenarios, num_stages)
+
+    # Load terminal cuts if provided (FROM FILES)
+    # We will implement get_terminal_cuts in Inputs or Algorithm module
+    cuts_data = get_terminal_cuts(files) 
 
     function fun_sp_build(m::JuMP.Model, node::Integer)
         add_system_elements!(m, system)
@@ -45,10 +58,50 @@ function __generate_subproblem_builder(files::Vector{InputModule})::Function
 
         add_system_objective!(m, system)
 
+        # Add Terminal Cuts if this is the last stage
+        if node == num_stages && cuts_data !== nothing
+            __add_terminal_cuts!(m, system, cuts_data)
+        end
+
         return nothing
     end
 
     return fun_sp_build
+end
+
+function __add_terminal_cuts!(m::JuMP.Model, system::Any, cuts::DataFrame)
+    # Define Future Cost Variable
+    @variable(m, FUTURE_COST >= 0)
+    
+    # Add to objective
+    @objective(m, Min, JuMP.objective_function(m) + FUTURE_COST)
+
+    # We assume cuts have columns: intercept, and one column per state variable (reservoir)
+    # The state variable name in the cut file should match the element name or ID
+    # For simplicity, assuming the cut file has columns "intercept" and then "Hydro_1", "Hydro_2"... or similar
+    # mapping to the reservoir volumes.
+    
+    # Actually, let's map based on the system's hydros.
+    # Hydro states in the model are m[STORED_VOLUME][i]
+    hydros = get_hydros_entities(system)
+    
+    for row in eachrow(cuts)
+        intercept = row["intercept"]
+        cut_expr = intercept
+        
+        # We iterate over hydros to find their coefs in the row
+        # This assumes column names match hydro names or IDs.
+        # Let's assume the CSV columns are exactly the IDs/Names used in the system.
+        for (i, hydro) in enumerate(hydros)
+            hydro_name = hydro.name # Or some ID
+            if hasproperty(row, Symbol(hydro_name))
+                coef = row[Symbol(hydro_name)]
+                cut_expr += coef * m[STORED_VOLUME][i]
+            end
+        end
+        
+        @constraint(m, FUTURE_COST >= cut_expr)
+    end
 end
 
 # TODO - this will change

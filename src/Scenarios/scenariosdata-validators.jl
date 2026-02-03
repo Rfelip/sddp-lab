@@ -40,7 +40,7 @@ end
 
 function __validate_scenarios_branchings!(d::Dict{String,Any}, e::CompositeException)::Bool
     branchings = d["branchings"]
-    valid = branchings > 0
+    valid = isa(branchings, Integer) ? branchings > 0 : all(b > 0 for b in branchings)
     valid ||
         push!(e, AssertionError("Uncertainties branchings ($branchings) must be positive"))
     return valid
