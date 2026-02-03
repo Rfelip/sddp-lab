@@ -8,7 +8,7 @@ function read_jsonc(
         open(filename) do io
             lines = readlines(io)
             lines .= replace.(lines, r"(?<!\\)//.*" => "")
-            return JSON.parse(join(lines, "\n"))
+            return JSON.parse(join(lines, "\n"); dicttype=Dict{String,Any})
         end
     else
         return nothing
