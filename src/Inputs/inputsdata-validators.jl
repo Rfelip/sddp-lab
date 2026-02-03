@@ -43,6 +43,12 @@ function __validate_files_keys_types_before_build!(
     keys_types = [String, String, String, String, String]
     valid_keys = __validate_keys!(d, keys, e)
     valid_types = valid_keys && __validate_key_types!(d, keys, keys_types, e)
+
+    if haskey(d, "terminal_cuts")
+        valid_types =
+            valid_types && __validate_key_types!(d, ["terminal_cuts"], [String], e)
+    end
+
     return valid_types
 end
 
@@ -86,6 +92,13 @@ function __build_files!(d::Dict{String,Any}, e::CompositeException)::Bool
     files_d["system"] = SystemData(files_d["system"], e)
     valid_system = files_d["system"] !== nothing
 
+    files_d["terminal_cuts"] = nothing
+    if haskey(d["files"], "terminal_cuts")
+        files_d["terminal_cuts"] = TerminalCutsData(files_d["terminal_cuts"], e)
+    end
+    valid_terminal_cuts =
+        !haskey(d["files"], "terminal_cuts") || files_d["terminal_cuts"] !== nothing
+
     # TODO - improve this logic for managing current directories.
     # TasksData currently never mentions other files, so it can
     # be validated by passing the relative path to the tasks.jsonc
@@ -95,12 +108,23 @@ function __build_files!(d::Dict{String,Any}, e::CompositeException)::Bool
     files_d["tasks"] = TasksData(joinpath(d["path"], files_d["tasks"]), e)
     valid_tasks = files_d["tasks"] !== nothing
 
-    valid_files = valid_algorithm && valid_scenarios && valid_system && valid_tasks
+    valid_files =
+        valid_algorithm &&
+        valid_scenarios &&
+        valid_system &&
+        valid_tasks &&
+        valid_terminal_cuts
 
     if valid_files
         d["files"] = [
-            files_d["algorithm"], files_d["scenarios"], files_d["system"], files_d["tasks"]
+            files_d["algorithm"],
+            files_d["scenarios"],
+            files_d["system"],
+            files_d["tasks"],
         ]
+        if files_d["terminal_cuts"] !== nothing
+            push!(d["files"], files_d["terminal_cuts"])
+        end
     end
 
     return valid_files

@@ -15,7 +15,9 @@ function AlgorithmData(d::Dict{String,Any}, e::CompositeException)
     valid_consistency = valid_content && __validate_algorithm_consistency!(d, e)
 
     return if valid_consistency
-        AlgorithmData(d["scenario_graph"], d["horizon"])
+        cut_type_str = get(d, "cut_type", "Single")
+        cut_type = Symbol(cut_type_str)
+        AlgorithmData(d["scenario_graph"], d["horizon"], cut_type)
     else
         nothing
     end
@@ -66,6 +68,15 @@ get_scenario_graph_max_depth(s::AlgorithmData)::ScenarioGraph
 Return the max depth allowed by the ScenarioGraph object.
 """
 function get_scenario_graph_max_depth(g::ScenarioGraph)::Integer end
+
+"""
+get_cut_type(s::AlgorithmData)::Symbol
+
+Return the cut type configuration ("Single" or "Multi").
+"""
+function get_cut_type(s::AlgorithmData)::Symbol
+    return s.cut_type
+end
 
 """
 get_number_of_stages(s::AlgorithmData)::Integer

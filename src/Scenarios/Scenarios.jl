@@ -35,7 +35,7 @@ function length(s::LoadScenarios) end
 struct ScenariosData <: InputModule
     seed::Integer
     initial_season::Integer
-    branchings::Integer
+    branchings::Union{Integer, Vector{Integer}}
     inflow::InflowScenarios
     load::LoadScenarios
 end

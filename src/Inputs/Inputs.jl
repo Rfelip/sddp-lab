@@ -56,8 +56,10 @@ end
 include("inputsdata-validators.jl")
 include("inputsdata.jl")
 
+include("terminalcutsdata.jl")
+
 include("entrypoint-validators.jl")
 include("entrypoint.jl")
 
-export Entrypoint, get_files, get_path, get_optimizer
+export Entrypoint, get_files, get_path, get_optimizer, TerminalCutsData, get_terminal_cuts
 end
