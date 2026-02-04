@@ -102,8 +102,10 @@ function add_system_elements!(m::JuMP.Model, ses::Hydros)
         # fixed is bounded
         # Indeed, even when a state variable is created the canonical way
         # (using @variable(..., SDDP.State)), only the 'out' half receives the bound information
-        set_lower_bound(m[STORED_VOLUME][n].out, ses.entities[n].min_storage)
-        set_upper_bound(m[STORED_VOLUME][n].out, ses.entities[n].max_storage)
+        if ses.entities[n].min_storage != ses.entities[n].max_storage
+            set_lower_bound(m[STORED_VOLUME][n].out, ses.entities[n].min_storage)
+            set_upper_bound(m[STORED_VOLUME][n].out, ses.entities[n].max_storage)
+        end
     end
 
     m[INFLOW] = @variable(m, [1:num_hydros], base_name = String(INFLOW))
@@ -141,17 +143,24 @@ end
 function add_hydro_balance!(m::JuMP.Model, hydros::Hydros)
     num_hydros = length(hydros)
 
+    is_trickle = Float64.([hydros.entities[i].min_storage ==
+                  hydros.entities[i].max_storage for i in 1:num_hydros])
+
     m[HYDRO_BALANCE] = @constraint(
         m,
         [n = 1:num_hydros],
-        m[STORED_VOLUME][n].out ==
-            m[STORED_VOLUME][n].in - m[OUTFLOW][n] +
-        m[INFLOW][n] +
-        sum(
-            m[OUTFLOW][j] for j in 1:num_hydros if
-            downstream(hydros.entities[j].id, hydros) == hydros.entities[n]
-        )
+        # === Reservoir ===
+        m[STORED_VOLUME][n].out * (1 - is_trickle[n])==
+            m[STORED_VOLUME][n].in * (1 - is_trickle[n])
+            - m[OUTFLOW][n] +
+              m[INFLOW][n] +
+              sum(
+                  m[OUTFLOW][j] for j in 1:num_hydros
+                  if downstream(hydros.entities[j].id, hydros) ==
+                     hydros.entities[n]
+              )
     )
+
     return nothing
 end
 
