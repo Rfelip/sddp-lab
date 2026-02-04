@@ -1,0 +1,41 @@
+{
+    "marginal_models": [
+        {
+            "id": 1,
+            "distributions": [
+                {
+                    "season": 1,
+                    "kind": "Normal",
+                    "parameters": [50.0, 0.0]
+                },
+                {
+                    "season": 2,
+                    "kind": "Normal",
+                    "parameters": [50.0, 0.0]
+                },
+                {
+                    "season": 3,
+                    "kind": "Normal",
+                    "parameters": [50.0, 0.0]
+                },
+                {
+                    "season": 4,
+                    "kind": "Normal",
+                    "parameters": [50.0, 0.0]
+                },
+                {
+                    "season": 5,
+                    "kind": "Normal",
+                    "parameters": [50.0, 10.0]
+                }
+            ]
+        }
+    ],
+    "copulas": [
+        { "season": 1, "kind": "GaussianCopula", "parameters": [[1.0]] },
+        { "season": 2, "kind": "GaussianCopula", "parameters": [[1.0]] },
+        { "season": 3, "kind": "GaussianCopula", "parameters": [[1.0]] },
+        { "season": 4, "kind": "GaussianCopula", "parameters": [[1.0]] },
+        { "season": 5, "kind": "GaussianCopula", "parameters": [[1.0]] }
+    ]
+}

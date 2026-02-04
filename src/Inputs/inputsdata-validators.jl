@@ -40,7 +40,7 @@ function __validate_files_keys_types_before_build!(
     d::Dict{String,Any}, e::CompositeException
 )::Bool
     keys = ["algorithm", "scenarios", "system", "tasks"]
-    keys_types = [String, String, String, String, String]
+    keys_types = [String, String, String, String]
     valid_keys = __validate_keys!(d, keys, e)
     valid_types = valid_keys && __validate_key_types!(d, keys, keys_types, e)
 
@@ -92,9 +92,10 @@ function __build_files!(d::Dict{String,Any}, e::CompositeException)::Bool
     files_d["system"] = SystemData(files_d["system"], e)
     valid_system = files_d["system"] !== nothing
 
-    files_d["terminal_cuts"] = nothing
-    if haskey(d["files"], "terminal_cuts")
+    if haskey(files_d, "terminal_cuts")
         files_d["terminal_cuts"] = TerminalCutsData(files_d["terminal_cuts"], e)
+    else
+        files_d["terminal_cuts"] = nothing
     end
     valid_terminal_cuts =
         !haskey(d["files"], "terminal_cuts") || files_d["terminal_cuts"] !== nothing

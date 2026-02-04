@@ -5,7 +5,7 @@ struct TerminalCutsData <: InputModule
 end
 
 function TerminalCutsData(filename::String, e::CompositeException)
-    df = read_dataframe(filename, e)
+    df = read_csv(filename, e)
     return df !== nothing ? TerminalCutsData(df) : nothing
 end
 

@@ -7,6 +7,7 @@ using ..Utils
 using ..Scenarios
 using ..Tasks
 using JuMP
+using DataFrames
 
 # TYPES ------------------------------------------------------------------------
 
