@@ -19,10 +19,12 @@
             // Defines the system that is being optimized,
             // with all the hydro plants, thermal plants, 
             // load buses and exchange lines.
-            "system": "system.jsonc",
-            // Defines the constraints that are used in some
-            // problems, in a generic way
-            "constraints": "constraints.jsonc"
-        }
-    }
-}
+                        "system": "system.jsonc",
+                        // Defines the constraints that are used in some
+                        // problems, in a generic way
+                        "constraints": "constraints.jsonc",
+                        "terminal_cuts": "cuts.parquet"
+                    }
+                }
+            }
+            

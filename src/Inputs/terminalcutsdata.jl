@@ -5,7 +5,12 @@ struct TerminalCutsData <: InputModule
 end
 
 function TerminalCutsData(filename::String, e::CompositeException)
-    df = read_csv(filename, e)
+    ext = lowercase(splitext(filename)[2])
+    df = if ext == ".parquet"
+        read_parquet(filename, e)
+    else
+        read_csv(filename, e)
+    end
     return df !== nothing ? TerminalCutsData(df) : nothing
 end
 
