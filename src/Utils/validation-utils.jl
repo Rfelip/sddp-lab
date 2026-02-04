@@ -167,11 +167,19 @@ function __parse_as_type!(d::Dict, k::String, t::Type)
     end
 end
 
-function __try_conversion!(d::Dict, k::String, t::Union{Type{Integer}, Type{Vector{Integer}}})
+function __try_conversion!(
+    d::Dict, k::String, t::Union{Type{Integer},Type{Vector{Integer}},Type{Union{Integer,Vector{Integer}}}}
+)
     if t === Integer
         return d[k] = Integer(d[k])
-    else
+    elseif t === Vector{Integer}
         return d[k] = Integer.(d[k])
+    else
+        if d[k] isa AbstractVector
+            return d[k] = Integer.(d[k])
+        else
+            return d[k] = Integer(d[k])
+        end
     end
 end
 
