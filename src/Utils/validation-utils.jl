@@ -167,6 +167,14 @@ function __parse_as_type!(d::Dict, k::String, t::Type)
     end
 end
 
+function __try_conversion!(d::Dict, k::String, t::Union{Type{Integer}, Type{Vector{Integer}}})
+    if t === Integer
+        return d[k] = Integer(d[k])
+    else
+        return d[k] = Integer.(d[k])
+    end
+end
+
 function __try_conversion!(d::Dict, k::String, t::Type)
     return d[k] = convert(t, d[k])
 end

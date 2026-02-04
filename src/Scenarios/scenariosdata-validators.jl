@@ -2,7 +2,7 @@
 
 UNCERTAINTIES_KEYS = ["seed", "initial_season", "branchings", "inflow", "load"]
 UNCERTAINTIES_KEY_TYPES = [
-    Integer, Integer, Integer, T where {T<:InflowScenarios}, T where {T<:LoadScenarios}
+    Integer, Integer, Union{Integer, Vector{Integer}}, T where {T<:InflowScenarios}, T where {T<:LoadScenarios}
 ]
 UNCERTAINTIES_KEY_TYPES_BEFORE_BUILD = [
     Integer, Integer, Integer, Dict{String,Any}, Dict{String,Any}
