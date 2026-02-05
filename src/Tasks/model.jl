@@ -60,7 +60,7 @@ function __generate_subproblem_builder(files::Vector{InputModule})::Function
 
         # Add Terminal Cuts if this is the last stage
         if node == num_stages && cuts_data !== nothing
-            __add_terminal_cuts!(m, system, cuts_data)
+            __add_terminal_cuts!(m, system, cuts_data, node)
         end
 
         return nothing
@@ -69,38 +69,56 @@ function __generate_subproblem_builder(files::Vector{InputModule})::Function
     return fun_sp_build
 end
 
-function __add_terminal_cuts!(m::JuMP.Model, system::Any, cuts::DataFrame)
-    # Define Future Cost Variable
-    @variable(m, FUTURE_COST >= 0)
+function __add_terminal_cuts!(m::JuMP.Model, system::Any, cuts::DataFrame, node::Integer)
+    # Define Future Cost Variable if not already present
+    # In SDDP.jl, the future cost is often represented by a variable
+    # But here we are manually adding it to the objective of the last stage.
+    # We should ensure we don't double count if we were to use SDDP.BellmanTerm
+    # but since this is the LAST stage, it normally has no future cost.
+    # We are adding one.
+    
+    @variable(m, TERMINAL_FUTURE_COST >= 0)
     
     # Add to objective
-    @objective(m, Min, JuMP.objective_function(m) + FUTURE_COST)
+    JuMP.set_objective_function(m, JuMP.objective_function(m) + TERMINAL_FUTURE_COST)
 
-    # We assume cuts have columns: intercept, and one column per state variable (reservoir)
-    # The state variable name in the cut file should match the element name or ID
-    # For simplicity, assuming the cut file has columns "intercept" and then "Hydro_1", "Hydro_2"... or similar
-    # mapping to the reservoir volumes.
+    # Filter cuts for stage 1 (terminal cuts of the study)
+    stage_cuts = filter(row -> row.stage == 1, cuts)
+    if isempty(stage_cuts)
+        @warn "No terminal cuts found for stage 1 in the provided cuts file."
+        return
+    end
+
+    cut_indexes = unique(stage_cuts.cut_index)
     
-    # Actually, let's map based on the system's hydros.
-    # Hydro states in the model are m[STORED_VOLUME][i]
-    hydros = get_hydros_entities(system)
-    
-    for row in eachrow(cuts)
-        intercept = row["intercept"]
-        cut_expr = intercept
+    for idx in cut_indexes
+        this_cut = filter(row -> row.cut_index == idx, stage_cuts)
         
-        # We iterate over hydros to find their coefs in the row
-        # This assumes column names match hydro names or IDs.
-        # Let's assume the CSV columns are exactly the IDs/Names used in the system.
-        for (i, hydro) in enumerate(hydros)
-            hydro_name = hydro.name # Or some ID
-            if hasproperty(row, Symbol(hydro_name))
-                coef = row[Symbol(hydro_name)]
-                cut_expr += coef * m[STORED_VOLUME][i]
-            end
+        # INTERCEPT is where state_variable_name == "INTERCEPT"
+        # The value is in 'state' (based on user description: "INTERCEPT is 0 ... state: Numerical values")
+        # Wait, user said: "INTERCEPT is 0, STORAGE variables range from 1 to 4" 
+        # "state: Numerical values ... coefficient: Numerical coefficients"
+        # Usually for INTERCEPT, the coefficient is 1 and the value is in 'state' or vice-versa.
+        # In NEWAVE, the intercept is often in the 'state' column when variable is 'INTERCEPT'.
+        
+        intercept_row = filter(row -> row.state_variable_name == "INTERCEPT", this_cut)
+        if isempty(intercept_row)
+            continue
+        end
+        intercept = intercept_row[1, :state]
+        
+        cut_expr = JuMP.AffExpr(intercept)
+        
+        storage_rows = filter(row -> row.state_variable_name == "STORAGE", this_cut)
+        for s_row in eachrow(storage_rows)
+            var_id = s_row.state_variable_id
+            coef = s_row.coefficient
+            # state_variable_id 1 to N maps to m[STORED_VOLUME][1:N]
+            # We use .out because this is a cut on the state LEAVING the last stage
+            JuMP.add_to_expression!(cut_expr, coef, m[STORED_VOLUME][var_id].out)
         end
         
-        @constraint(m, FUTURE_COST >= cut_expr)
+        @constraint(m, TERMINAL_FUTURE_COST >= cut_expr)
     end
 end
 

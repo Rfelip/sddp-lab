@@ -5,7 +5,7 @@ UNCERTAINTIES_KEY_TYPES = [
     Integer, Integer, Union{Integer, Vector{Integer}}, T where {T<:InflowScenarios}, T where {T<:LoadScenarios}
 ]
 UNCERTAINTIES_KEY_TYPES_BEFORE_BUILD = [
-    Integer, Integer, Integer, Dict{String,Any}, Dict{String,Any}
+    Integer, Integer, Union{Integer, Vector{Integer}}, Dict{String,Any}, Dict{String,Any}
 ]
 
 function __validate_scenarios_keys_types!(d::Dict{String,Any}, e::CompositeException)::Bool
