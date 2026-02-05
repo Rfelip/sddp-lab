@@ -9,6 +9,7 @@ include("Scenarios/Scenarios.jl")
 include("Outputs/Outputs.jl")
 include("Tasks/Tasks.jl")
 include("Inputs/Inputs.jl")
+include("Utils/transform_fcf.jl")
 include("Main.jl")
 
 end
