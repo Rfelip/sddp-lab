@@ -15,16 +15,12 @@ function __build_model(files::Vector{InputModule}, optimizer)::SDDP.PolicyGraph
     graph = __build_graph(files)
     sp_builder = __generate_subproblem_builder(files)
     
-    algo = get_algorithm(files)
-    cut_type_sym = get_cut_type(algo)
-    cut_type = (cut_type_sym == :Multi) ? SDDP.MULTI_CUT : SDDP.SINGLE_CUT
-    
     model = SDDP.PolicyGraph(
-        sp_builder, graph; 
-        sense = :Min, 
-        lower_bound = 0.0, 
-        optimizer = optimizer,
-        cut_type = cut_type
+        sp_builder,
+        graph;
+        sense = :Min,
+        lower_bound = 0.0,
+        optimizer = optimizer
     )
 
     return model
@@ -301,7 +297,7 @@ function __simulate_model(
         custom_recorders = Dict{Symbol,Function}(
             MARGINAL_COST => (sp::JuMP.Model) -> JuMP.dual.(sp[LOAD_BALANCE]),
             WATER_VALUE => (sp::JuMP.Model) -> JuMP.dual.(sp[HYDRO_BALANCE]),
-            TOTAL_COST => (sp::JuMP.Model) -> JuMP.objective_value(sp),
+            TOTAL_COST => (sp::JuMP.Model) -> JuMP.objective_value(sp)
         ),
         parallel_scheme = parallel_scheme,
         skip_undefined_variables = true,

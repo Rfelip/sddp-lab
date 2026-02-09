@@ -6,6 +6,7 @@ using ..System
 using ..Utils
 using ..Scenarios
 using ..Tasks
+using ..TerminalCuts
 using JuMP
 using DataFrames
 
@@ -56,8 +57,6 @@ end
 
 include("inputsdata-validators.jl")
 include("inputsdata.jl")
-
-include("terminalcutsdata.jl")
 
 include("entrypoint-validators.jl")
 include("entrypoint.jl")

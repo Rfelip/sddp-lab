@@ -1,0 +1,150 @@
+{
+    "marginal_models": [
+        {
+            "id": 1,
+            "distributions": [
+                {
+                    "kind": "Normal",
+                    "parameters": [
+                        41408.69158266646,
+                        0.0
+                    ],
+                    "season": 1
+                },
+                {
+                    "kind": "Normal",
+                    "parameters": [
+                        29808.21158789889,
+                        6400.841413097159
+                    ],
+                    "season": 2
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "distributions": [
+                {
+                    "kind": "Normal",
+                    "parameters": [
+                        6474.105942540558,
+                        0.0
+                    ],
+                    "season": 1
+                },
+                {
+                    "kind": "Normal",
+                    "parameters": [
+                        8439.20860004664,
+                        7887.85929577769
+                    ],
+                    "season": 2
+                }
+            ]
+        },
+        {
+            "id": 3,
+            "distributions": [
+                {
+                    "kind": "Normal",
+                    "parameters": [
+                        11975.589717868614,
+                        0.0
+                    ],
+                    "season": 1
+                },
+                {
+                    "kind": "Normal",
+                    "parameters": [
+                        7181.824684138031,
+                        3043.207657979226
+                    ],
+                    "season": 2
+                }
+            ]
+        },
+        {
+            "id": 4,
+            "distributions": [
+                {
+                    "kind": "Normal",
+                    "parameters": [
+                        16281.44022257555,
+                        0.0
+                    ],
+                    "season": 1
+                },
+                {
+                    "kind": "Normal",
+                    "parameters": [
+                        10942.572225099339,
+                        3147.8682580453205
+                    ],
+                    "season": 2
+                }
+            ]
+        }
+    ],
+    "copulas": [
+        {
+            "season": 1,
+            "kind": "GaussianCopula",
+            "parameters": [
+                [
+                    1.0,
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                [
+                    0.0,
+                    1.0,
+                    0.0,
+                    0.0
+                ],
+                [
+                    0.0,
+                    0.0,
+                    1.0,
+                    0.0
+                ],
+                [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                ]
+            ]
+        },
+        {
+            "season": 2,
+            "kind": "GaussianCopula",
+            "parameters": [
+                [
+                    1.0,
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                [
+                    0.0,
+                    1.0,
+                    0.0,
+                    0.0
+                ],
+                [
+                    0.0,
+                    0.0,
+                    1.0,
+                    0.0
+                ],
+                [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                ]
+            ]
+        }
+    ]
+}

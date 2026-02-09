@@ -1,0 +1,22 @@
+{
+    "seed": 42,
+    "initial_season": 1,
+    "branchings": [
+        1,
+        200
+    ],
+    "inflow": {
+        "stochastic_process": {
+            "kind": "Naive",
+            "params": {
+                "file": "inflow_scenarios.jsonc"
+            }
+        }
+    },
+    "load": {
+        "kind": "DeterministicLoad",
+        "params": {
+            "file": "load.csv"
+        }
+    }
+}

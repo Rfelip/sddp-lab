@@ -51,6 +51,12 @@ function __generate_saa(
 end
 
 function generate_saa(
+    s::AbstractStochasticProcess, initial_season::Integer, N::Integer, B::Vector{Integer}
+)::Vector{Vector{Vector{Float64}}}
+    return __generate_saa(Random.default_rng(), s, initial_season, N, B)
+end
+
+function generate_saa(
     s::AbstractStochasticProcess, initial_season::Integer, N::Integer, B::Integer
 )::Vector{Vector{Vector{Float64}}}
     return __generate_saa(Random.default_rng(), s, initial_season, N, B)

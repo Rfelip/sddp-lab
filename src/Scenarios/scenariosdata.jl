@@ -14,6 +14,10 @@ function ScenariosData(d::Dict{String,Any}, e::CompositeException)
     # Consistency validation
     valid_consistency = valid_content && __validate_scenarios_consistency!(d, e)
 
+    if d["branchings"] isa Vector
+        d["branchings"] = Vector{Integer}(d["branchings"])
+    end
+    
     return if valid_consistency
         ScenariosData(
             d["seed"], d["initial_season"], d["branchings"], d["inflow"], d["load"]

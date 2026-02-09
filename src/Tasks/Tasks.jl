@@ -6,6 +6,7 @@ using ..System
 using ..Utils
 using ..Scenarios
 using ..Outputs
+using ..TerminalCuts
 using CSV
 using JSON
 using Parquet: Parquet

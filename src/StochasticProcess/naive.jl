@@ -114,6 +114,7 @@ function __generate_saa(
 
         for b in range(1, B)
             sim = rand(rng, D, 1)
+            sim  = [max(0, sim_i) for sim_i in sim]
             out[n][b] .+= sim
         end
     end
@@ -125,7 +126,7 @@ function __generate_saa(
     rng::AbstractRNG, s::Naive, initial_season::Integer, N::Integer, B::Vector{Integer}
     )::Vector{Vector{Vector{Float64}}}
     size_s = size(s)    
-    out = [[zeros(size_s[1] * b) for b in B] for n in range(1, N)]
+    out = [[zeros(size_s[1]) for b in range(1, B[n])] for n in range(1, N)]
 
     for n in range(1, N)
         m = (n + initial_season - 1)
@@ -137,6 +138,7 @@ function __generate_saa(
 
         for b in range(1, B[n])
             sim = rand(rng, D, 1)
+            sim  = [max(0, sim_i) for sim_i in sim]
             out[n][b] .+= sim
         end
     end
