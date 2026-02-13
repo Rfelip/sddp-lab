@@ -8,36 +8,30 @@ using DataFrames
 
 struct TerminalCutsData <: InputModule
     cuts::DataFrame
+    stage::Union{Integer,Nothing}
 end
 
-function TerminalCutsData(filename::String, e::CompositeException)
+function TerminalCutsData(filename::String, stage::Union{Integer,Nothing}, e::CompositeException)
     ext = lowercase(splitext(filename)[2])
     df = if ext == ".parquet"
         read_parquet(filename, e)
     else
         read_csv(filename, e)
     end
-    return df !== nothing ? TerminalCutsData(df) : nothing
+    return df !== nothing ? TerminalCutsData(df, stage) : nothing
 end
 
 # GENERAL METHODS -----------------------------------------------------------------------
 
 """
-get_terminal_cuts(f::Vector{InputModule})::Union{DataFrame, Nothing}
+    get_terminal_cuts(f::Vector{InputModule})::Union{TerminalCutsData, Nothing}
 
-Return the terminal cuts dataframe if present.
+Return the TerminalCutsData module if present in the files vector.
 """
-function get_terminal_cuts(f::Vector{InputModule})::Union{DataFrame,Nothing}
-    # We look for the TerminalCutsData in the vector
-    # This relies on get_input_module returning the struct, or nothing if not found
-    # But get_input_module usually assumes 1 instance.
-    # Let's check how get_input_module is implemented in Utils.
-    # Assuming it returns the module or throws/returns default.
-    
-    # We can implement a safe search here
+function get_terminal_cuts(f::Vector{InputModule})::Union{TerminalCutsData,Nothing}
     idx = findfirst(x -> isa(x, TerminalCutsData), f)
     if idx !== nothing
-        return f[idx].cuts
+        return f[idx]
     end
     return nothing
 end

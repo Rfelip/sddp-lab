@@ -49,6 +49,11 @@ function __validate_files_keys_types_before_build!(
             valid_types && __validate_key_types!(d, ["terminal_cuts"], [String], e)
     end
 
+    if haskey(d, "terminal_cuts_stage")
+        valid_types =
+            valid_types && __validate_key_types!(d, ["terminal_cuts_stage"], [Integer], e)
+    end
+
     return valid_types
 end
 
@@ -93,7 +98,8 @@ function __build_files!(d::Dict{String,Any}, e::CompositeException)::Bool
     valid_system = files_d["system"] !== nothing
 
     if haskey(files_d, "terminal_cuts")
-        files_d["terminal_cuts"] = TerminalCutsData(files_d["terminal_cuts"], e)
+        tc_stage = get(files_d, "terminal_cuts_stage", nothing)
+        files_d["terminal_cuts"] = TerminalCutsData(files_d["terminal_cuts"], tc_stage, e)
     else
         files_d["terminal_cuts"] = nothing
     end
