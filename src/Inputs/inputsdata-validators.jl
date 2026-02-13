@@ -97,14 +97,14 @@ function __build_files!(d::Dict{String,Any}, e::CompositeException)::Bool
     files_d["system"] = SystemData(files_d["system"], e)
     valid_system = files_d["system"] !== nothing
 
-    if haskey(files_d, "terminal_cuts")
+    has_terminal_cuts = haskey(files_d, "terminal_cuts")
+    if has_terminal_cuts
         tc_stage = get(files_d, "terminal_cuts_stage", nothing)
         files_d["terminal_cuts"] = TerminalCutsData(files_d["terminal_cuts"], tc_stage, e)
     else
         files_d["terminal_cuts"] = nothing
     end
-    valid_terminal_cuts =
-        !haskey(d["files"], "terminal_cuts") || files_d["terminal_cuts"] !== nothing
+    valid_terminal_cuts = !has_terminal_cuts || files_d["terminal_cuts"] !== nothing
 
     # TODO - improve this logic for managing current directories.
     # TasksData currently never mentions other files, so it can
