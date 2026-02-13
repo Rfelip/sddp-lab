@@ -6,6 +6,12 @@ using DataFrames
 # Transformar inflows
 include("transform_inflow_scenarios.jl")
 
+optimizer = HiGHS.Optimizer
+
+# Rodar modelos base para gerar cuts.parquet
+SDDPlab.main("example/reservatorio/4ree", optimizer)
+SDDPlab.main("example/sem_reservatorio/4ree", optimizer)
+
 function transform_fcf(newwave_path, decomp_path, month)
 
     # get file newave_path/out/policy/cuts.parquet
@@ -52,8 +58,6 @@ transform_fcf("example/sem_reservatorio/4ree",
 transform_fcf("example/sem_reservatorio/4ree",
                     "example/sem_reservatorio/4ree_decomp_agosto", 8)
 
-
-optimizer = HiGHS.Optimizer
 
 # Rodar algoritmo COM RESERVATORIO
 SDDPlab.main("example/reservatorio/4ree_decomp_jan", optimizer)
