@@ -35,9 +35,8 @@ function __generate_subproblem_builder(files::Vector{InputModule})::Function
 
     SAA = generate_saa(scenarios, num_stages)
 
-    # Load terminal cuts if provided (FROM FILES)
-    # We will implement get_terminal_cuts in Inputs or Algorithm module
-    cuts_data = get_terminal_cuts(files) 
+    # Load terminal cuts if provided
+    terminal_cuts_module = get_terminal_cuts(files)
 
     function fun_sp_build(m::JuMP.Model, node::Integer)
         add_system_elements!(m, system)
@@ -54,9 +53,9 @@ function __generate_subproblem_builder(files::Vector{InputModule})::Function
 
         add_system_objective!(m, system)
 
-        # Add Terminal Cuts if this is the last stage
-        if node == num_stages && cuts_data !== nothing
-            __add_terminal_cuts!(m, system, cuts_data, node)
+        # Add Terminal Cuts if this is the last stage and cuts were provided
+        if node == num_stages && terminal_cuts_module !== nothing
+            __add_terminal_cuts!(m, terminal_cuts_module)
         end
 
         return nothing
@@ -65,55 +64,65 @@ function __generate_subproblem_builder(files::Vector{InputModule})::Function
     return fun_sp_build
 end
 
-function __add_terminal_cuts!(m::JuMP.Model, system::Any, cuts::DataFrame, node::Integer)
-    # Define Future Cost Variable if not already present
-    # In SDDP.jl, the future cost is often represented by a variable
-    # But here we are manually adding it to the objective of the last stage.
-    # We should ensure we don't double count if we were to use SDDP.BellmanTerm
-    # but since this is the LAST stage, it normally has no future cost.
-    # We are adding one.
-    
-    @variable(m, TERMINAL_FUTURE_COST >= 0)
-    
-    # Add to objective
-    JuMP.set_objective_function(m, JuMP.objective_function(m) + TERMINAL_FUTURE_COST)
+"""
+    __add_terminal_cuts!(m, terminal_cuts_module)
 
-    # Filter cuts for stage 1 (terminal cuts of the study)
-    stage_cuts = filter(row -> row.stage == 1, cuts)
+Add Benders cuts as constraints on the last stage subproblem, approximating
+the future cost function from an external model (e.g. NEWAVE).
+
+The cut format follows SDDP.jl's convention:
+    θ ≥ intercept + Σ coefficient[k] * (x[k] - state[k])
+
+where `intercept` is stored in the `state` column of the INTERCEPT row,
+`state[k]` is the linearization point, and `coefficient[k]` is the gradient.
+"""
+function __add_terminal_cuts!(m::JuMP.Model, tc::TerminalCutsData)
+    cuts = tc.cuts
+    cut_stage = tc.stage
+
+    # Filter to the specified stage, or use all rows if no stage was specified
+    stage_cuts = if cut_stage !== nothing
+        filter(row -> row.stage == cut_stage, cuts)
+    else
+        cuts
+    end
+
     if isempty(stage_cuts)
-        @warn "No terminal cuts found for stage 1 in the provided cuts file."
+        @warn "No terminal cuts found$(cut_stage !== nothing ? " for stage $(cut_stage)" : "") in the provided cuts file."
         return
     end
 
+    # Terminal future cost variable — the last stage normally has no future cost
+    # in SDDP.jl, so we add one explicitly and constrain it with the cuts.
+    @variable(m, TERMINAL_FUTURE_COST >= 0)
+    JuMP.set_objective_function(m, JuMP.objective_function(m) + TERMINAL_FUTURE_COST)
+
     cut_indexes = unique(stage_cuts.cut_index)
-    
+
     for idx in cut_indexes
         this_cut = filter(row -> row.cut_index == idx, stage_cuts)
-        
-        # INTERCEPT is where state_variable_name == "INTERCEPT"
-        # The value is in 'state' (based on user description: "INTERCEPT is 0 ... state: Numerical values")
-        # Wait, user said: "INTERCEPT is 0, STORAGE variables range from 1 to 4" 
-        # "state: Numerical values ... coefficient: Numerical coefficients"
-        # Usually for INTERCEPT, the coefficient is 1 and the value is in 'state' or vice-versa.
-        # In NEWAVE, the intercept is often in the 'state' column when variable is 'INTERCEPT'.
-        
+
         intercept_row = filter(row -> row.state_variable_name == "INTERCEPT", this_cut)
         if isempty(intercept_row)
             continue
         end
         intercept = intercept_row[1, :state]
-        
+
+        # Build: θ ≥ intercept + Σ coeff[k] * (x[k] - state[k])
+        #      = intercept - Σ coeff[k]*state[k] + Σ coeff[k]*x[k]
         cut_expr = JuMP.AffExpr(intercept)
-        
+
         storage_rows = filter(row -> row.state_variable_name == "STORAGE", this_cut)
         for s_row in eachrow(storage_rows)
             var_id = s_row.state_variable_id
             coef = s_row.coefficient
-            # state_variable_id 1 to N maps to m[STORED_VOLUME][1:N]
-            # We use .out because this is a cut on the state LEAVING the last stage
+            state_val = s_row.state
+            # Subtract coeff * state (the linearization point correction)
+            JuMP.add_to_expression!(cut_expr, -coef * state_val)
+            # Add coeff * x.out (the actual state variable)
             JuMP.add_to_expression!(cut_expr, coef, m[STORED_VOLUME][var_id].out)
         end
-        
+
         @constraint(m, TERMINAL_FUTURE_COST >= cut_expr)
     end
 end
