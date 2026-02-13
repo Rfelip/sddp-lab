@@ -1,3 +1,15 @@
+# v2.1.0
+
+## New features
+
+- Adds terminal cuts support for coupling DECOMP with NEWAVE via Benders cut boundary conditions on the last stage
+- New optional `terminal_cuts` key in `main.jsonc` to specify a CSV or Parquet file with external cuts
+- New optional `terminal_cuts_stage` key to filter cuts by stage when using unprocessed multi-stage cut files
+
+## Fixes
+
+- Fixes terminal cut formula to match SDDP.jl convention: `θ ≥ intercept + Σ coeff[k] * (x[k] - state[k])`. The previous implementation was missing the `(x - state)` linearization point correction, producing incorrect cut intercepts.
+
 # v2.0.0
 
 ## New features

@@ -92,7 +92,7 @@ As can be noted, `SDDPlab` has a highly hierachical file structure, meant to com
             // model and its parameters
             "scenarios": "scenarios.jsonc",
             // Defines the system that is being optimized,
-            // with all the hydro plants, thermal plants, 
+            // with all the hydro plants, thermal plants,
             // load buses and exchange lines.
             "system": "system.jsonc",
             // Defines the constraints that are used in some
@@ -103,9 +103,45 @@ As can be noted, `SDDPlab` has a highly hierachical file structure, meant to com
 }
 ```
 
-The names of the directory `data` and all files it contains are flexible, meant to be spelled ou to `main.jsonc`. 
+The names of the directory `data` and all files it contains are flexible, meant to be spelled out in `main.jsonc`.
 
 System elements, such as hydros, buses, etc. all get their own unique input file. These are tabular format, in which each line represents one element (i.e. one hydro, one bus, etc.)
+
+### Terminal Cuts (Optional)
+
+Terminal cuts allow coupling a short-horizon DECOMP problem with a long-horizon NEWAVE model by providing Benders cuts as a boundary condition on the last stage. To enable this, add the `terminal_cuts` key to the `files` block in `main.jsonc`:
+
+```json
+{
+    "inputs": {
+        "path": "data",
+        "files": {
+            "tasks": "tasks.jsonc",
+            "algorithm": "algorithm.jsonc",
+            "scenarios": "scenarios.jsonc",
+            "system": "system.jsonc",
+            "terminal_cuts": "cuts.parquet"
+        }
+    }
+}
+```
+
+The cuts file (CSV or Parquet) must follow the SDDP.jl cut format with columns: `stage`, `cut_index`, `state_variable_name`, `state_variable_id`, `state`, `coefficient`. Each cut is reconstructed as:
+
+```
+θ ≥ intercept + Σ coefficient[k] * (x[k] - state[k])
+```
+
+where rows with `state_variable_name == "INTERCEPT"` provide the intercept (in the `state` column), and rows with `state_variable_name == "STORAGE"` provide the gradients and linearization points for each state variable.
+
+If the cuts file contains multiple stages (e.g. the full output of a NEWAVE run), use `terminal_cuts_stage` to select which stage to apply:
+
+```json
+"terminal_cuts": "newave_cuts.parquet",
+"terminal_cuts_stage": 2
+```
+
+When `terminal_cuts_stage` is omitted, all rows in the file are used (suitable for pre-filtered files where the stage has already been set to a single value).
 
 ## Outputs
 
