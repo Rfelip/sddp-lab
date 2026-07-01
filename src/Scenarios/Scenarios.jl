@@ -86,12 +86,37 @@ Generates the SAA scenarios for the inflow, for parametrizing in the SDDP algori
 """
 function add_uncertainties!(m::JuMP.Model, scenarios::ScenariosData, node::Int)
     inflow = scenarios.inflow.stochastic_process
-    
+
     # TODO - for when we have a proper load representation
     # add_load_uncertainty!(m, load)
 
     season = __node2season(node, size(inflow, 2), scenarios.initial_season)
     return add_inflow_uncertainty!(m, inflow, season)
+end
+
+# Markovian policy graphs (MC-SDDP) label nodes (stage, markov_state); __node2season already
+# has a Tuple overload (Utils/stochasticprocess-utils.jl), so this mirrors the Int method
+# above exactly -- only the node type differs.
+function add_uncertainties!(m::JuMP.Model, scenarios::ScenariosData, node::Tuple{Int,Int})
+    inflow = scenarios.inflow.stochastic_process
+
+    season = __node2season(node, size(inflow, 2), scenarios.initial_season)
+    return add_inflow_uncertainty!(m, inflow, season)
+end
+
+"""
+    generate_markovian_graph(scenarios::ScenariosData, num_stages::Integer)
+
+Process-aware graph hook: `nothing` unless the inflow process is a `MarkovChain`, in which
+case returns the `SDDP.Graph` built from its fitted transition matrices. Lets
+`Tasks/model.jl` stay decoupled from `StochasticProcess` internals by going through
+`Scenarios`, as it already does for `add_uncertainties!`/`generate_saa`.
+"""
+function generate_markovian_graph(scenarios::ScenariosData, num_stages::Integer)
+    inflow = scenarios.inflow.stochastic_process
+    return StochasticProcess.generate_markovian_graph(
+        inflow, num_stages, scenarios.initial_season
+    )
 end
 
 include("inflow-validators.jl")
@@ -103,6 +128,12 @@ include("load.jl")
 include("scenariosdata-validators.jl")
 include("scenariosdata.jl")
 
-export ScenariosData, add_uncertainties!, generate_saa, get_load, get_scenarios, set_seed!
+export ScenariosData,
+    add_uncertainties!,
+    generate_saa,
+    generate_markovian_graph,
+    get_load,
+    get_scenarios,
+    set_seed!
 
 end

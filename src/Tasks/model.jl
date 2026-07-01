@@ -19,12 +19,15 @@ function __build_model(files::Vector{InputModule}, optimizer)::SDDP.PolicyGraph
     cut_type_sym = get_cut_type(algo)
     cut_type = (cut_type_sym == :Multi) ? SDDP.MULTI_CUT : SDDP.SINGLE_CUT
     
+    # PRE-EXISTING BUG (unrelated to this cycle's feature, found while getting the lab to
+    # run at all): the installed SDDP.jl (v1.13.2, resolved fresh since Manifest.toml is
+    # gitignored) moved `cut_type`/`lower_bound` off `PolicyGraph` and onto
+    # `BellmanFunction`; the old direct kwargs are a MethodError on this version.
     model = SDDP.PolicyGraph(
-        sp_builder, graph; 
-        sense = :Min, 
-        lower_bound = 0.0, 
+        sp_builder, graph;
+        sense = :Min,
         optimizer = optimizer,
-        cut_type = cut_type
+        bellman_function = SDDP.BellmanFunction(; lower_bound = 0.0, cut_type = cut_type)
     )
 
     return model
@@ -40,10 +43,15 @@ function __generate_subproblem_builder(files::Vector{InputModule})::Function
     SAA = generate_saa(scenarios, num_stages)
 
     # Load terminal cuts if provided (FROM FILES)
-    # We will implement get_terminal_cuts in Inputs or Algorithm module
-    cuts_data = get_terminal_cuts(files) 
+    # PRE-EXISTING BUG (unrelated to this cycle's feature, found while getting the lab to
+    # run at all): get_terminal_cuts/TerminalCutsData live in the Inputs module, which is
+    # `include`d AFTER Tasks in SDDPlab.jl and itself `using ..Tasks` -- so Tasks can never
+    # `using ..Inputs` (circular), and the name was never resolvable here. This call was
+    # dead on arrival (UndefVarError) for every study, terminal-cuts or not. Hardcoding
+    # "no terminal cuts" until TerminalCutsData is moved somewhere Tasks can see (Core?).
+    cuts_data = nothing
 
-    function fun_sp_build(m::JuMP.Model, node::Integer)
+    function fun_sp_build(m::JuMP.Model, node)
         add_system_elements!(m, system)
         add_uncertainties!(m, scenarios, node)
 
@@ -105,7 +113,7 @@ function __add_terminal_cuts!(m::JuMP.Model, system::Any, cuts::DataFrame)
 end
 
 # TODO - this will change
-function __add_load_balance!(m::JuMP.Model, files::Vector{InputModule}, node::Integer)
+function __add_load_balance!(m::JuMP.Model, files::Vector{InputModule}, node)
     system = get_system(files)
     hydros_entities = get_hydros_entities(system)
     thermals_entities = get_thermals_entities(system)
@@ -137,7 +145,7 @@ function __add_load_balance!(m::JuMP.Model, files::Vector{InputModule}, node::In
             m[REVERSE_EXCHANGE][j] - m[DIRECT_EXCHANGE][j] for
             j in 1:num_lines if lines_entities[j].source_bus_id == bus_ids[n]
         ) +
-        m[DEFICIT][bus_ids[n]] == get_load(bus_ids[n], node, scenarios)
+        m[DEFICIT][bus_ids[n]] == get_load(bus_ids[n], __node_stage(node), scenarios)
     )
     return nothing
 end
@@ -152,7 +160,14 @@ Gera um `SDDP.Graph` parametrizado de acordo com configuracoes de estudo
   - `cfg::ConfigData`: configuracao do estudo como retornado por `Lab.Reader.read_config()`
 """
 function __build_graph(files::Vector{InputModule})
-    return generate_scenario_graph(get_algorithm(files))
+    scenarios = get_scenarios(files)
+    num_stages = get_number_of_stages(get_algorithm(files))
+
+    # process-aware: a MarkovChain inflow builds its own Markovian graph from its fitted
+    # transition matrices; every other process falls back to the regular
+    # AlgorithmData-driven graph (unchanged).
+    markovian_graph = generate_markovian_graph(scenarios, num_stages)
+    return markovian_graph !== nothing ? markovian_graph : generate_scenario_graph(get_algorithm(files))
 end
 
 """

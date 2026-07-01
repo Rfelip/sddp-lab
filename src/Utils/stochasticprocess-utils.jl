@@ -10,6 +10,21 @@ function __node2season(node::Int, period::Int, initial_season::Int)
     return season
 end
 
+# Markovian policy graphs (MC-SDDP) label nodes (stage, markov_state); only the stage
+# component maps onto a season -- delegate to the Int method above.
+function __node2season(node::Tuple{Int,Int}, period::Int, initial_season::Int)
+    return __node2season(node[1], period, initial_season)
+end
+
+"""
+    __node_stage(node)
+
+Return the stage-graph index of an SDDP node. Plain policy graphs label nodes with the
+stage index itself; Markovian graphs label them `(stage, markov_state)`.
+"""
+__node_stage(node::Int) = node
+__node_stage(node::Tuple{Int,Int}) = node[1]
+
 function __lagged_season(current_season::Int, lag::Int, period::Int)
     m = current_season - lag
     if m >= 1
