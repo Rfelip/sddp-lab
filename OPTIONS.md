@@ -34,7 +34,7 @@ the multiplicative (not log/exp-link) form — the exp-link form is nonlinear/no
 | `glpk` | lightweight; fine for easy cases |
 
 ## 5. Parallel scheme — `data/tasks.jsonc : Policy.params.parallel_scheme`
-`Serial` · (the parallel scheme added on `integration`) — see `src/Tasks/parallelscheme.jl`.
+`Serial` · `Asynchronous` · `Threaded` (→ `SDDP.Threaded()`, ~6× on the run-03 matrix — 82% of wall is HiGHS LP-solve) — see `src/Tasks/parallelscheme.jl`.
 
 ## 6. Evaluation / out-of-sample — `SDDPlab.Evaluation` + `scripts/run_and_score.jl`
 | Option | How | Notes |
