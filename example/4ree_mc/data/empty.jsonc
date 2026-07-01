@@ -1,0 +1,6 @@
+{
+    // intentionally empty: MarkovChain's config-cast step requires a "file" key (shared
+    // machinery used by every stochastic process kind), but this MarkovChain is fit directly
+    // from historical_scenarios.csv (see "historical_file" below), not from a marginal_models
+    // dict -- nothing needs to be merged in from this file.
+}

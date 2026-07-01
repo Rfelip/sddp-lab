@@ -1,0 +1,33 @@
+{
+  "seed": 42,
+  "initial_season": 1,
+  // K=5 states x 2 within-node samples = 10 total per-stage support, matching
+  // Naive's 10 branchings (equal-support protocol)
+  "branchings": 2,
+  "inflow": {
+    "stochastic_process": {
+      // AR | PAR | HMM | MarkovChain | ...
+      "kind": "MarkovChain",
+      "params": {
+        // required by shared config-cast machinery, unused here (see empty.jsonc)
+        "file": "empty.jsonc",
+        // fit DIRECTLY from real ONS history (26 full years, 2000-2025) -- positive by
+        // construction, no AR/positivity problem. See build_historical.jl for provenance
+        // (report-machine run-02's hydro1=SE,hydro2=S,hydro3=NE,hydro4=N mapping).
+        "historical_file": "historical_scenarios.csv",
+        "num_states": 5,
+        "fit_seed": 123,
+        // 26 years ~ 26 obs per season-pair for a 5x5 transition estimate -- thin. Laplace-
+        // smooth toward uniform rather than trust sparse empirical counts outright.
+        "smoothing_alpha": 1.0
+      }
+    }
+  },
+  "load": {
+    // DeterministicLoad | ...
+    "kind": "DeterministicLoad",
+    "params": {
+      "file": "load.csv"
+    }
+  }
+}

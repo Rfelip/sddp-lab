@@ -1,0 +1,24 @@
+{
+  "seed": 42,
+  "initial_season": 1,
+  "branchings": 10,
+  "inflow": {
+    "stochastic_process": {
+      // AR | PAR | HMM | MarkovChain | ...
+      // synthetic periodic AR(1), phi=0.3, stationary marginal matched to 4ree's own
+      // per-season LogNormal marginals -- see build_4ree_ar.jl for how this was derived
+      // (no historical inflow series ships with the repo to fit a "real" AR from)
+      "kind": "AutoRegressive",
+      "params": {
+        "file": "inflow_scenarios_ar.jsonc"
+      }
+    }
+  },
+  "load": {
+    // DeterministicLoad | ...
+    "kind": "DeterministicLoad",
+    "params": {
+      "file": "load.csv"
+    }
+  }
+}

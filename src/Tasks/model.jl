@@ -42,7 +42,7 @@ function __generate_subproblem_builder(files::Vector{InputModule})::Function
     # Load terminal cuts if provided (FROM FILES)
     cuts_data = parentmodule(@__MODULE__).Inputs.get_terminal_cuts(files)
 
-    function fun_sp_build(m::JuMP.Model, node::Integer)
+    function fun_sp_build(m::JuMP.Model, node)
         add_system_elements!(m, system)
         add_uncertainties!(m, scenarios, node)
 
@@ -105,7 +105,7 @@ function __add_terminal_cuts!(m::JuMP.Model, system::Any, cuts::DataFrame)
 end
 
 # TODO - this will change
-function __add_load_balance!(m::JuMP.Model, files::Vector{InputModule}, node::Integer)
+function __add_load_balance!(m::JuMP.Model, files::Vector{InputModule}, node)
     system = get_system(files)
     hydros_entities = get_hydros_entities(system)
     thermals_entities = get_thermals_entities(system)
@@ -137,7 +137,7 @@ function __add_load_balance!(m::JuMP.Model, files::Vector{InputModule}, node::In
             m[REVERSE_EXCHANGE][j] - m[DIRECT_EXCHANGE][j] for
             j in 1:num_lines if lines_entities[j].source_bus_id == bus_ids[n]
         ) +
-        m[DEFICIT][bus_ids[n]] == get_load(bus_ids[n], node, scenarios)
+        m[DEFICIT][bus_ids[n]] == get_load(bus_ids[n], __node_stage(node), scenarios)
     )
     return nothing
 end
@@ -152,7 +152,14 @@ Gera um `SDDP.Graph` parametrizado de acordo com configuracoes de estudo
   - `cfg::ConfigData`: configuracao do estudo como retornado por `Lab.Reader.read_config()`
 """
 function __build_graph(files::Vector{InputModule})
-    return generate_scenario_graph(get_algorithm(files))
+    scenarios = get_scenarios(files)
+    num_stages = get_number_of_stages(get_algorithm(files))
+
+    # process-aware: a MarkovChain inflow builds its own Markovian graph from its fitted
+    # transition matrices; every other process falls back to the regular
+    # AlgorithmData-driven graph (unchanged).
+    markovian_graph = generate_markovian_graph(scenarios, num_stages)
+    return markovian_graph !== nothing ? markovian_graph : generate_scenario_graph(get_algorithm(files))
 end
 
 """

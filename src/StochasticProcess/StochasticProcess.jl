@@ -4,6 +4,8 @@ using Random, Distributions, Copulas
 using LinearAlgebra
 using JuMP
 using SDDP: SDDP
+using CSV
+using DataFrames
 using ..Core
 using ..Utils
 
@@ -52,7 +54,11 @@ end
 
 function generate_saa(
     s::AbstractStochasticProcess, initial_season::Integer, N::Integer, B::Integer
-)::Vector{Vector{Vector{Float64}}}
+)
+    # NB: no return type annotation -- Naive/AutoRegressive return
+    # Vector{Vector{Vector{Float64}}} (indexed by stage), but a MarkovChain's SAA is keyed
+    # by (stage, markov_state), so it returns a Dict instead. Both are consumed the same
+    # way downstream (SAA[node]), just with a different node type.
     return __generate_saa(Random.default_rng(), s, initial_season, N, B)
 end
 
@@ -94,13 +100,18 @@ include("naive.jl")
 include("autoregressive-validators.jl")
 include("autoregressive.jl")
 
+include("markovchain-validators.jl")
+include("markovchain.jl")
+
 export
     Naive,
     AutoRegressive,
+    MarkovChain,
     AbstractStochasticProcess,
     generate_saa,
     add_inflow_uncertainty!,
     parameterize_inflow!,
+    generate_markovian_graph,
     __cast_stochastic_process_internals_from_files!
 
 end

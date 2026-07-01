@@ -1,0 +1,28 @@
+{
+    "seed": 41,
+    "initial_season": 1,
+    // K=5 states x 2 within-node samples = 10 total per-stage support, matching
+    // Naive/AR's 10 branchings (equal-support protocol)
+    "branchings": 2,
+    "inflow": {
+        "stochastic_process": {
+            // AR | PAR | HMM | MarkovChain | ...
+            "kind": "MarkovChain",
+            "params": {
+                // same AR config 1dsin_ar uses -- the MC lattice+transitions are fit to
+                // the SAME data-generating process, isolating representation from data
+                "file": "inflow_scenarios.jsonc",
+                "num_states": 5,
+                "num_paths": 2000,
+                "fit_seed": 123
+            }
+        }
+    },
+    "load": {
+        // DeterministicLoad | ...
+        "kind": "DeterministicLoad",
+        "params": {
+            "file": "load.csv"
+        }
+    }
+}
