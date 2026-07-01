@@ -9,6 +9,7 @@ include("Scenarios/Scenarios.jl")
 include("Outputs/Outputs.jl")
 include("Tasks/Tasks.jl")
 include("Inputs/Inputs.jl")
+include("Evaluation/Evaluation.jl")
 include("Main.jl")
 
 end
