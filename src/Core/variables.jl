@@ -19,6 +19,7 @@ SPILLAGE = Symbol("SPILLAGE")
 # Scenarios
 ω_INFLOW = Symbol("ω_INFLOW")
 STCHP = Symbol("STCHP")
+AR_INFLOW_SLACK = Symbol("AR_INFLOW_SLACK")
 # Constraints
 HYDRO_BALANCE = Symbol("HYDRO_BALANCE")
 LOAD_BALANCE = Symbol("LOAD_BALANCE")

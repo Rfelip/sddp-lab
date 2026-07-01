@@ -32,4 +32,4 @@ out*/
 *.so
 
 # VSCode
-.vscode/**
+.vscode/**profiling_output/

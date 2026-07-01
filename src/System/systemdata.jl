@@ -136,6 +136,14 @@ function add_system_objective!(m::JuMP.Model, s::SystemData)
     num_hydros = length(hydros)
     num_thermals = length(thermals)
 
+    # AR inflow-floor slack (only present for AutoRegressive models): penalised at the hydro's bus
+    # deficit_cost × 1.0001 (the ceiling on water value, same convention as HYDRO_MIN_GENERATION_SLACK),
+    # so the slack only ever floors a negative AR conditional-mean prediction at 0 — never creates water.
+    ar_slack_pen = if haskey(JuMP.object_dictionary(m), AR_INFLOW_SLACK)
+        sum(hydros[n].bus[].deficit_cost * 1.0001 * m[AR_INFLOW_SLACK][n] for n in 1:num_hydros)
+    else
+        zero(JuMP.AffExpr)
+    end
     SDDP.@stageobjective(
         m,
         sum(thermals[n].cost * m[THERMAL_GENERATION][n] for n in 1:num_thermals) +
@@ -146,7 +154,8 @@ function add_system_objective!(m::JuMP.Model, s::SystemData)
                 hydros[n].bus[].deficit_cost * 1.0001 * m[HYDRO_MIN_GENERATION_SLACK][n] for
                 n in 1:num_hydros
             ) +
-            sum(hydros[n].spillage_penalty * m[SPILLAGE][n] for n in 1:num_hydros)
+            sum(hydros[n].spillage_penalty * m[SPILLAGE][n] for n in 1:num_hydros) +
+            ar_slack_pen
     )
     # @objective(
     #     m,

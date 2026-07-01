@@ -1,0 +1,12 @@
+{
+  "inputs": {
+    "path": "data",
+    "files": {
+      "tasks": "tasks.jsonc",
+      "algorithm": "algorithm.jsonc",
+      "scenarios": "scenarios.jsonc",
+      "system": "system.jsonc",
+      "constraints": "constraints.jsonc"
+    }
+  }
+}

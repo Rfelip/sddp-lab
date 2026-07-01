@@ -149,7 +149,8 @@ function add_hydro_balance!(m::JuMP.Model, hydros::Hydros)
         m[INFLOW][n] +
         sum(
             m[OUTFLOW][j] for j in 1:num_hydros if
-            downstream(hydros.entities[j].id, hydros) == hydros.entities[n]
+            hydros.entities[j].downstream_id == hydros.entities[n].id;
+            init = zero(JuMP.AffExpr),
         )
     )
     return nothing

@@ -36,6 +36,25 @@ function Asynchronous(d::Dict{String,Any}, e::CompositeException)
     return valid_consistency ? Asynchronous() : nothing
 end
 
+# CLASS Threaded -----------------------------------------------------------------------
+
+function Threaded(d::Dict{String,Any}, e::CompositeException)
+
+    # Build internal objects
+    valid_internals = __build_threaded_internals_from_dicts!(d, e)
+
+    # Keys and types validation
+    valid_keys_types = valid_internals && __validate_threaded_keys_types!(d, e)
+
+    # Content validation
+    valid_content = valid_keys_types && __validate_threaded_content!(d, e)
+
+    # Consistency validation
+    valid_consistency = valid_content && __validate_threaded_consistency!(d, e)
+
+    return valid_consistency ? Threaded() : nothing
+end
+
 # SDDP METHODS --------------------------------------------------------------------------
 
 function generate_parallel_scheme(p::Serial)::SDDP.AbstractParallelScheme
@@ -44,6 +63,10 @@ end
 
 function generate_parallel_scheme(p::Asynchronous)::SDDP.AbstractParallelScheme
     return SDDP.Asynchronous()
+end
+
+function generate_parallel_scheme(p::Threaded)::SDDP.AbstractParallelScheme
+    return SDDP.Threaded()
 end
 
 # HELPERS -------------------------------------------------------------------------------------

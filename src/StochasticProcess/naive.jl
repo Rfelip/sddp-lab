@@ -157,6 +157,12 @@ function add_inflow_uncertainty!(m::JuMP.Model, s::Naive, ::Int)::JuMP.Model
     return m
 end
 
+# Naive: the noise IS the inflow, injected by fixing ω_INFLOW (additive, unchanged behaviour).
+function parameterize_inflow!(m::JuMP.Model, ::Naive, omega, node::Int)
+    JuMP.fix.(m[ω_INFLOW], omega)
+    return nothing
+end
+
 # HELPERS ----------------------------------------------------------------------------------
 
 function __build_mvdist(s::Naive, season::Int)::Copulas.SklarDist

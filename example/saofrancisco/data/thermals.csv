@@ -1,0 +1,9 @@
+id  ,name ,bus_id ,min_generation ,max_generation ,cost
+  1 ,"GOIANIA II" ,     1 ,0.0 ,136.0 ,1927.00
+  2 ,"JUIZ DE FORA" ,     1 ,0.0 ,87.0 ,523.00
+  3 ,"PALMEIRAS GO" ,     1 ,0.0 ,140.0 ,1493.00
+  4 ,"TERMOMACAE" ,     1 ,0.0 ,929.0 ,880.00
+  5 ,"VIANA" ,     1 ,0.0 ,437.0 ,1257.00
+  6 ,"XAVANTES" ,     1 ,0.0 ,54.0 ,2632.00
+  7 ,"CAMPINA GDE" ,     1 ,0.0 ,169.0 ,1257.00
+  8 ,"PETROLINA" ,     1 ,0.0 ,594.0 ,2014.00

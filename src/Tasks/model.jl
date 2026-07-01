@@ -19,12 +19,12 @@ function __build_model(files::Vector{InputModule}, optimizer)::SDDP.PolicyGraph
     cut_type_sym = get_cut_type(algo)
     cut_type = (cut_type_sym == :Multi) ? SDDP.MULTI_CUT : SDDP.SINGLE_CUT
     
+    # cut_type moved from PolicyGraph constructor to train() in SDDP.jl >= 1.9
     model = SDDP.PolicyGraph(
-        sp_builder, graph; 
-        sense = :Min, 
-        lower_bound = 0.0, 
+        sp_builder, graph;
+        sense = :Min,
+        lower_bound = 0.0,
         optimizer = optimizer,
-        cut_type = cut_type
     )
 
     return model
@@ -40,8 +40,7 @@ function __generate_subproblem_builder(files::Vector{InputModule})::Function
     SAA = generate_saa(scenarios, num_stages)
 
     # Load terminal cuts if provided (FROM FILES)
-    # We will implement get_terminal_cuts in Inputs or Algorithm module
-    cuts_data = get_terminal_cuts(files) 
+    cuts_data = parentmodule(@__MODULE__).Inputs.get_terminal_cuts(files)
 
     function fun_sp_build(m::JuMP.Model, node::Integer)
         add_system_elements!(m, system)
@@ -52,8 +51,9 @@ function __generate_subproblem_builder(files::Vector{InputModule})::Function
         __add_load_balance!(m, files, node)
 
         Ω_node = vec(SAA[node])
+        inflow_process = scenarios.inflow.stochastic_process
         SDDP.parameterize(m, Ω_node) do ω
-            return JuMP.fix.(m[ω_INFLOW], ω)
+            return parameterize_inflow!(m, inflow_process, ω, node)
         end
 
         add_system_objective!(m, system)

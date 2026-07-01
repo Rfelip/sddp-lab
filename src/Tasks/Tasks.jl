@@ -5,6 +5,7 @@ using ..Algorithm
 using ..System
 using ..Utils
 using ..Scenarios
+using ..StochasticProcess: parameterize_inflow!
 using ..Outputs
 using CSV
 using JSON
@@ -62,6 +63,8 @@ abstract type ParallelScheme end
 struct Serial <: ParallelScheme end
 
 struct Asynchronous <: ParallelScheme end
+
+struct Threaded <: ParallelScheme end
 
 abstract type RiskMeasure end
 

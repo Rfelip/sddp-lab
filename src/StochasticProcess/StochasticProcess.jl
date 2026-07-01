@@ -64,6 +64,15 @@ Add stochastic variables and inflow model recurrence constraints to a JuMP model
 function add_inflow_uncertainty!(m::JuMP.Model, s::AbstractStochasticProcess)::nothing end
 
 """
+    parameterize_inflow!(m, s, omega, node)
+
+Inject one sampled noise realisation `omega` into the inflow subproblem of process `s`. Naive fixes
+`ω_INFLOW` (additive); AutoRegressive scales the AR-constraint coefficients by the lognormal multiplier
+ε (multiplicative — keeps inflows non-negative and the LP linear). Called inside `SDDP.parameterize`.
+"""
+function parameterize_inflow!(m::JuMP.Model, s::AbstractStochasticProcess, omega, node::Int) end
+
+"""
     __validate(s::AbstractStochasticProcess)
 
 Return `true` if `s` is a valid instance of stochastic process; raise errors otherwise
@@ -91,6 +100,7 @@ export
     AbstractStochasticProcess,
     generate_saa,
     add_inflow_uncertainty!,
+    parameterize_inflow!,
     __cast_stochastic_process_internals_from_files!
 
 end

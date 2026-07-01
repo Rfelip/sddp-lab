@@ -1,0 +1,35 @@
+{
+  "tasks": [
+    {
+      "kind": "Policy",
+      "params": {
+        "convergence": {
+          "min_iterations": 10,
+          "max_iterations": 500,
+          "stopping_criteria": {
+            "kind": "IterationLimit",
+            "params": {
+              "num_iterations": 500
+            }
+          }
+        },
+        "risk_measure": {
+          "kind": "Expectation",
+          "params": {}
+        },
+        "parallel_scheme": {
+          "kind": "Serial",
+          "params": {}
+        },
+        "results": {
+          "path": "out/policy",
+          "save": true,
+          "format": {
+            "kind": "ParquetFormat",
+            "params": {}
+          }
+        }
+      }
+    }
+  ]
+}
