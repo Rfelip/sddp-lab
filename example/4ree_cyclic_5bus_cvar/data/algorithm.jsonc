@@ -1,0 +1,30 @@
+{
+    // Cyclic (infinite-horizon) scenario graph — the SDDP-IH analog.
+    // Net-new combination flagged in SDDP-LOCATIONS.md step 1: the 5-bus
+    // SUDESTE/SUL/NORDESTE/NORTE/NOFICT1 exchange topology of example/4ree
+    // together with a CyclicScenarioGraph. example/4ree used RegularScenarioGraph
+    // (finite, discount_rate=1.0); example/4ree_singlebus_cyclic was cyclic but
+    // collapsed to one bus with no exchange. This case is both cyclic AND 5-bus.
+    "scenario_graph": {
+        "kind": "CyclicScenarioGraph",
+        "params": {
+            // Monthly discount = (1/1.12)^(1/12) = 0.9906003979430034, i.e. the
+            // 12% annual rate the 4REE / Shapiro-Tekaya instance uses.
+            // hydrothermal-mpc's build_graph(periodical=true) uses this same
+            // monthly_rate as the UnicyclicGraph edge probability. The prior
+            // cyclic examples used a placeholder 0.9; this is the economically
+            // correct value for the 4REE problem.
+            "discount_rate": 0.9906003979430034,
+            "cycle_length": 12,
+            "cycle_stage": 1,
+            "max_depth": 120
+        }
+    },
+    "horizon": {
+        // explicit | daily | weekly | monthly | yearly
+        "kind": "ExplicitHorizon",
+        "params": {
+            "file": "stages.csv"
+        }
+    }
+}

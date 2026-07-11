@@ -1,0 +1,89 @@
+{
+  "tasks": [
+    {
+      "kind": "Echo",
+      "params": {
+        "results": {
+          "path": "out/echo",
+          "save": false,
+          "format": {
+            "kind": "AnyFormat",
+            "params": {}
+          }
+        }
+      }
+    },
+    {
+      "kind": "Policy",
+      "params": {
+        "convergence": {
+          // Min/Max number of iterations
+          "min_iterations": 2,
+          "max_iterations": 1024,
+          // Early stopping criteria and params
+          "stopping_criteria": {
+            // IterationLimit | TimeLimit | LowerBoundStability | Statistical | ...
+            // The frozen SDDP-IH CSV was trained with time_limit=120s
+            // (julia_compare.jl). 500 iterations is a committed-example default;
+            // bump for a production policy. See MIGRATION.md.
+            "kind": "IterationLimit",
+            "params": {
+              "num_iterations": 500
+            }
+          }
+        },
+        // CVaR-SDDP-IH analog. The lab's CVaR(alpha, lambda) maps to
+        // SDDP.EAVaR(beta=alpha, lambda=(1-lambda)) — see src/Tasks/riskmeasure.jl:91-93.
+        // The old path (julia_cvar.jl) used SDDP.EAVaR(lambda=0.5, beta=0.15). So
+        // alpha=0.15 => beta=0.15 and lambda=0.5 => EAVaR lambda=(1-0.5)=0.5. VERIFIED:
+        // {alpha:0.15, lambda:0.5} == EAVaR(lambda=0.5, beta=0.15) exactly.
+        "risk_measure": {
+          // Expectation | WorstCase | AVaR | CVaR | ...
+          "kind": "CVaR",
+          "params": {
+            "alpha": 0.15,
+            "lambda": 0.5
+          }
+        },
+        "parallel_scheme": {
+          "kind": "Serial",
+          "params": {}
+        },
+        "results": {
+          "path": "out/policy",
+          "save": true,
+          "format": {
+            "kind": "ParquetFormat",
+            "params": {}
+          }
+        }
+      }
+    },
+    {
+      "kind": "Simulation",
+      "params": {
+        "num_simulated_series": 2000,
+        "policy": {
+          "load": false,
+          "path": "out/policy",
+          "format": {
+            "kind": "ParquetFormat",
+            "params": {}
+          }
+        },
+        "parallel_scheme": {
+          "kind": "Serial",
+          "params": {}
+        },
+        "results": {
+          "path": "out/simulation",
+          "save": true,
+          "format": {
+            "kind": "ParquetFormat",
+            "params": {}
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  // seed 42 + 20 branchings mirrors hydrothermal-mpc's in-sample noise as
+  // closely as the Naive process allows: the old path (:empirical mode) trains
+  // on 20 seed-42 LogNormal draws per (reservoir, month). The LogNormal
+  // MARGINALS in inflow_scenarios.jsonc are already bit-identical to
+  // hydrothermal-mpc's INFLOW_LOGNORMAL_PARAMS. What still differs is the exact
+  // draw stream (Julia MersenneTwister(42) in hydro_thermal_data.jl vs the lab's
+  // own Naive/SAA RNG) — see MIGRATION.md step 2. This is a same-distribution,
+  // same-seed, same-count bank, NOT a bit-identical resampling.
+  "seed": 42,
+  "initial_season": 1,
+  "branchings": 20,
+  "inflow": {
+    "stochastic_process": {
+      // AR | PAR | HMM | ...
+      "kind": "Naive",
+      "params": {
+        "file": "inflow_scenarios.jsonc"
+        // "marginal_models": [],
+        // "copulas": []
+      }
+    }
+  },
+  "load": {
+    // DeterministicLoad | ...
+    "kind": "DeterministicLoad",
+    "params": {
+      "file": "load.csv"
+    }
+  }
+}
