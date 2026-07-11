@@ -25,7 +25,7 @@ Usage:
 using Pkg
 Pkg.instantiate()
 
-using SDDPlab, SDDP, HiGHS
+using SDDPlab, SDDP, HiGHS, Random
 import DataFrames
 
 case_dir  = ARGS[1]
@@ -70,6 +70,13 @@ end
 risk = SDDPlab.Tasks.generate_risk_measure(SDDPlab.Tasks.get_risk_measure(policy_task))
 algo = SDDPlab.Algorithm.get_algorithm(files)
 cut_type = SDDPlab.Algorithm.get_cut_type(algo) == :Multi ? SDDP.MULTI_CUT : SDDP.SINGLE_CUT
+
+# Reseed the global RNG right before training so the trained policy (and thus the exported
+# trajectories) is reproducible run-to-run. Config-driven seed (scenarios.jsonc `seed`),
+# overridable by editing that file. See MIGRATION-mpc-vs-sddp.md Barrier B.
+seed = SDDPlab.Scenarios.get_scenarios(files).seed
+@info "Seeding RNG before SDDP.train" seed
+Random.seed!(seed)
 
 @info "Training policy" case=case_dir iters=iters policy=policy
 t0 = time()

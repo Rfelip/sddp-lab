@@ -63,6 +63,13 @@ function run_task(
     files = a[input_index].files
     optimizer = a[input_index].optimizer
     model = __build_model(files, optimizer)
+    # Reseed the global RNG immediately before training. `__build_model` already seeds
+    # once (in __generate_subproblem_builder, to make SAA generation deterministic), but
+    # that consumes an implementation-dependent number of draws, so the RNG state entering
+    # SDDP.train — which drives forward-pass scenario sampling — is fragile. Reseeding here
+    # from the config-level `scenarios.seed` makes the trained policy reproducible run-to-run
+    # and keeps the seed overridable via scenarios.jsonc. See MIGRATION-mpc-vs-sddp.md Barrier B.
+    set_seed!(get_scenarios(files))
     __train_model(model, get_convergence(t), get_risk_measure(t), get_parallel_scheme(t))
     return PolicyArtifact(t, model, files)
 end
