@@ -33,20 +33,29 @@ exchange penalty — and **`make_build`'s objective ignores the `exchange_penalt
 entirely** (it reads only capacities). So setting `exchange_penalty=0` in the lab case makes the
 two LPs match. That is exactly what `example/4ree_cyclic_5bus/data/lines.csv` does.
 
-**Barrier B — training non-determinism (unfixable, governs everything).** `run_sddp` does **not**
-`Random.seed!` before `SDDP.train`, and the SDDP-IH path is **wall-clock** limited
-(`time_limit=120s` → machine-dependent iteration count). So the trained policy — hence every
-number in the frozen CSVs — is **not reproducible run-to-run even by its own generator.** The OOS
-simulation on a *fixed* policy is deterministic, but the policy is not. Consequence: the bench's
-"reproduce a frozen experiment bit-for-bit" bar is unmeetable here by any route. The only
-meaningful equivalence is **statistical / distributional** over the 5000 OOS realisations.
+**Barrier B — training non-determinism.** Historically `run_sddp` did **not** `Random.seed!`
+before `SDDP.train`, and the *old* SDDP-IH path was **wall-clock** limited (`time_limit=120s` →
+machine-dependent iteration count). So the *frozen CSVs'* trained policy — hence every number in
+them — is **not reproducible run-to-run even by its own generator.** The OOS simulation on a
+*fixed* policy is deterministic, but the frozen policy is not. Consequence: bit-for-bit
+reproduction of the frozen CSVs is unmeetable; the only meaningful equivalence is **statistical /
+distributional** over the 5000 OOS realisations.
+
+**Update 2026-07-11 — the LAB side is now seeded (Task 1 done).** `set_seed!(get_scenarios(files))`
+is called immediately before `SDDP.train` in all three lab training entry points
+(`src/Tasks/taskdefinition.jl` Policy task, `validate/run_sddp_baseline.jl`,
+`validate/export_trajectories.jl`), driven by the config-level `scenarios.seed` (default 42,
+overridable in `scenarios.jsonc`). Verified: two 150-iter baseline runs give the bit-identical
+bound `6.6903661e8`. So going forward the *lab's* policies are reproducible run-to-run — only the
+*old frozen* CSVs remain non-reproducible (they were made before this fix, on the old path).
 
 ## Step-by-step status
 
 | # | Step | Status | Notes |
 |---|------|--------|-------|
 | 1 | Cyclic + 5-bus case | **DONE** | `example/4ree_cyclic_5bus` — net-new. 5-bus SUDESTE/SUL/NORDESTE/NORTE/NOFICT1 exchange + `CyclicScenarioGraph`, discount `(1/1.12)^(1/12)=0.99060`. Loads + trains, 0 numeric issues. |
-| 2 | Inflow provenance | **DECISION MADE (see below)** | Recommend adopting the lab's Naive bank as a statistically-equivalent baseline; needs Ruan sign-off because it changes paper numbers. |
+| 2 | Inflow provenance | **APPROVED (Branch B) — quantifying shift** | Ruan approved Branch B 2026-07-11. Lab's Naive bank adopted as the new statistically-equivalent baseline. Shift being quantified (see "Baseline-shift results" below). |
+| B | RNG seeding (Task 1) | **DONE** | `scenarios.seed` reseeded before `SDDP.train` at all 3 entry points; verified bit-identical bound across two runs. Lab policies now reproducible. |
 | 3 | Deficit segments | **DONE (no work needed)** | Frozen CSVs use LAB mode = single segment 1420.34 = lab native `buses.csv`. The 4-segment shape never affected the reported numbers. |
 | 4 | Solver tuning | **DONE** | The presolve crash trap was specific to the 4-segment ub=0 columns. The native single-segment case trains fine with **presolve=off** (the lab's own default) — verified, 0 numeric issues. No special tuning needed. |
 | 5 | Per-stage export | **DONE** | `Evaluation.export_stage_trajectories` + `validate/export_trajectories.jl`. Emits the exact `_eval` schema; verified schema-identical to `sddp_trajectories.csv`, inflow round-trips 0/720, water balance holds. |
