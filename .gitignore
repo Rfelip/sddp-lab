@@ -42,4 +42,5 @@ results_*.json
 results_*.npz
 example/2ree_cyclic/out/
 example/*_singlebus_cyclic/out/
+example/4ree_cyclic_5bus/out/
 sweep_logs/
