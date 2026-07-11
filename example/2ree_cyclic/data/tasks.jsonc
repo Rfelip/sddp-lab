@@ -1,0 +1,61 @@
+{
+  "tasks": [
+    {
+      "kind": "Policy",
+      "params": {
+        "convergence": {
+          "min_iterations": 10,
+          "max_iterations": 1024,
+          "stopping_criteria": {
+            "kind": "IterationLimit",
+            "params": {
+              "num_iterations": 500
+            }
+          }
+        },
+        "risk_measure": {
+          "kind": "Expectation",
+          "params": {}
+        },
+        "parallel_scheme": {
+          "kind": "Threaded",
+          "params": {}
+        },
+        "results": {
+          "path": "out/policy",
+          "save": true,
+          "format": {
+            "kind": "ParquetFormat",
+            "params": {}
+          }
+        }
+      }
+    },
+    {
+      "kind": "Simulation",
+      "params": {
+        "num_simulated_series": 2000,
+        "policy": {
+          "load": false,
+          "path": "out/policy",
+          "format": {
+            "kind": "ParquetFormat",
+            "params": {}
+          }
+        },
+        "parallel_scheme": {
+          "kind": "Threaded",
+          "params": {}
+        },
+        "results": {
+          "path": "out/simulation",
+          "save": true,
+          "format": {
+            "kind": "ParquetFormat",
+            "params": {}
+          }
+        }
+      }
+    }
+  ]
+}
