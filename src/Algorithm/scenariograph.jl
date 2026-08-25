@@ -72,15 +72,31 @@ end
 
 function generate_scenario_graph(g::CyclicScenarioGraph, num_stages::Integer)::SDDP.Graph
     graph = SDDP.Graph(0)
-    edge_prob = g.discount_rate
+
+    # SDDP.jl reads an arc weight as the discount applied on TAKING that arc, so a rate quoted
+    # per cycle has to be spread across the cycle's arcs rather than written onto each of them.
+    # Writing it directly, as this did, turned `discount_rate = 0.9` with `cycle_length = 12`
+    # into 0.9 per month: 0.9^12 = 0.28 per year, roughly three times the intended discounting,
+    # on every case in `sddp-model-cards` and every policy trained from them.
+    #
+    # `reference-split/sddp.jl` sidesteps the same trap from the other side: SDDP.jl's own
+    # `UnicyclicGraph` puts the factor on the CLOSING arc alone (documented as "a probability of
+    # discount_factor of continuing the cycle", and so since num_nodes arrived in odow/SDDP.jl#562,
+    # 2023-01-02), which under-discounts by the same factor unless every arc is overwritten.
+    edge_prob = g.discount_rate^(1 / g.cycle_length)
+
+    # The root arc is an entry point, not a time step, so it carries no discount -- matching
+    # SDDP.jl's own LinearGraph, which roots at 1.0. Discounting it only rescaled the reported
+    # bound by a constant; the policy was never affected.
+    arc_prob(s::Integer) = s == 1 ? 1.0 : edge_prob
 
     for s in 1:(g.cycle_stage - 1)
         SDDP.add_node(graph, s)
-        SDDP.add_edge(graph, s - 1 => s, edge_prob)
+        SDDP.add_edge(graph, s - 1 => s, arc_prob(s))
     end
     for s in (g.cycle_stage):(g.cycle_stage + g.cycle_length - 1)
         SDDP.add_node(graph, s)
-        SDDP.add_edge(graph, s - 1 => s, edge_prob)
+        SDDP.add_edge(graph, s - 1 => s, arc_prob(s))
     end
     SDDP.add_edge(graph, (g.cycle_length + g.cycle_stage - 1) => g.cycle_stage, edge_prob)
 
