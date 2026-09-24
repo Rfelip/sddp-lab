@@ -136,11 +136,19 @@ function add_system_objective!(m::JuMP.Model, s::SystemData)
     num_hydros = length(hydros)
     num_thermals = length(thermals)
 
-    # AR inflow-floor slack (only present for AutoRegressive models): penalised at the hydro's bus
-    # deficit_cost × 1.0001 (the ceiling on water value, same convention as HYDRO_MIN_GENERATION_SLACK),
-    # so the slack only ever floors a negative AR conditional-mean prediction at 0 — never creates water.
+    # AR inflow-floor slack (only present for AutoRegressive models). A unit of water at plant n is worth
+    # up to c_d · ρ̄_n, with ρ̄_n the productivity accumulated from n down to the sea (the water-value band of
+    # the CIM-SDDP note), not c_d. Pricing the slack at c_d × 1.0001 let the LP buy water at upstream plants
+    # of a cascade (ar1 card, plants 1-4, ρ̄ > 1). Priced above the band, the slack only floors a negative AR
+    # prediction at 0. max(1, ρ̄) keeps every plant at least at the old price; the largest deficit cost
+    # covers water turbined at another bus.
     ar_slack_pen = if haskey(JuMP.object_dictionary(m), AR_INFLOW_SLACK)
-        sum(hydros[n].bus[].deficit_cost * 1.0001 * m[AR_INFLOW_SLACK][n] for n in 1:num_hydros)
+        max_deficit = maximum(b.deficit_cost for b in buses)
+        hydro_system = get_hydros(s)
+        sum(
+            max_deficit * 1.0001 * max(1.0, __accumulated_productivity(hydros[n], hydro_system)) *
+            m[AR_INFLOW_SLACK][n] for n in 1:num_hydros
+        )
     else
         zero(JuMP.AffExpr)
     end

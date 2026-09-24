@@ -168,6 +168,16 @@ function downstream(id::Integer, hydros::Hydros)
     return length(downstream_id) == 0 ? nothing : @view hydros.entities[downstream_id[1]]
 end
 
+function __accumulated_productivity(h::Hydro, hydros::Hydros)::Float64
+    total = h.productivity
+    next = downstream(h.id, hydros)
+    while next !== nothing
+        total += next[].productivity
+        next = downstream(next[].id, hydros)
+    end
+    return total
+end
+
 function __build_hydro_entities!(
     d::Dict{String,Any}, buses::Buses, e::CompositeException
 )::Bool
