@@ -240,11 +240,16 @@ function __load_external_cuts!(model::SDDP.PolicyGraph, cuts::DataFrame)
     # Adds for the last node
     __add_cuts_from_stage!(jsondata, cuts, maximum(stages) + 1)
     # Writes and reads json
-    jsonpath = joinpath(tempdir(), "rawcuts2.json")
-    open(jsonpath, "w") do f
-        JSON.print(f, jsondata)
+    # A unique file per call: a shared name let concurrent runs read each other's cuts.
+    jsonpath = tempname() * ".json"
+    try
+        open(jsonpath, "w") do f
+            JSON.print(f, jsondata)
+        end
+        return SDDP.read_cuts_from_file(model, jsonpath)
+    finally
+        rm(jsonpath; force = true)
     end
-    return SDDP.read_cuts_from_file(model, jsonpath)
 end
 
 """

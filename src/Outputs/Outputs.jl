@@ -318,9 +318,14 @@ Extrai os cortes gerados pelo modelo no formato de um `DataFrame`.
 function get_model_cuts(model::SDDP.PolicyGraph)::DataFrame
     # TODO - add support for multicuts
     @info "Collecting generated cuts"
-    jsonpath = joinpath(tempdir(), "rawcuts.json")
-    SDDP.write_cuts_to_file(model, jsonpath)
-    jsondata = JSON.parsefile(jsonpath)
+    # A unique file per call: a shared name let concurrent runs read each other's cuts.
+    jsonpath = tempname() * ".json"
+    jsondata = try
+        SDDP.write_cuts_to_file(model, jsonpath)
+        JSON.parsefile(jsonpath)
+    finally
+        rm(jsonpath; force = true)
+    end
     intercept_df = __process_cuts_for_intercepts(jsondata)
     sv_df = __process_cuts_for_state_vars(jsondata)
     append!(intercept_df, sv_df)
