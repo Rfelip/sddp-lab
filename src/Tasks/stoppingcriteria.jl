@@ -77,8 +77,44 @@ function generate_stopping_rule(s::TimeLimit)::SDDP.AbstractStoppingRule
     return SDDP.TimeLimit(s.time_seconds)
 end
 
+"""
+    RelativeBoundStalling(num_previous_iterations, threshold_percent)
+
+Stop once the bound has moved by at most `threshold_percent / 100 * |bound|` in total over
+the last `num_previous_iterations` iterations, so a card's `"threshold": 0.05` reads as 0.05%.
+
+SDDP.jl's `BoundStalling` differs twice: its tolerance is absolute (a threshold of 0.05 never
+fired on a bound of order 1e8, and every training ran to its iteration limit), and it tests
+each single-iteration step, which lets a slow steady climb stop training early (on `base`:
+iteration 191 at 96.4% of the final bound, against 568 at 98.6% with the window).
+"""
+struct RelativeBoundStalling <: SDDP.AbstractStoppingRule
+    num_previous_iterations::Int
+    threshold_percent::Float64
+end
+
+SDDP.stopping_rule_status(::RelativeBoundStalling) = :bound_stalling
+
+function SDDP.convergence_test(
+    ::SDDP.PolicyGraph,
+    log::Vector{SDDP.Log},
+    rule::RelativeBoundStalling,
+)
+    n = rule.num_previous_iterations
+    if length(log) < n + 1
+        return false
+    end
+    # BoundStalling's guard: a bound that has not moved since the first iteration usually
+    # means the cuts have not propagated back to the root yet, not convergence.
+    if isapprox(log[1].bound, log[end].bound; atol = 1e-6)
+        return false
+    end
+    tolerance = rule.threshold_percent / 100 * abs(log[end].bound)
+    return abs(log[end].bound - log[end-n].bound) <= tolerance
+end
+
 function generate_stopping_rule(s::LowerBoundStability)::SDDP.AbstractStoppingRule
-    return SDDP.BoundStalling(s.num_iterations, s.threshold)
+    return RelativeBoundStalling(s.num_iterations, s.threshold)
 end
 
 # HELPERS -------------------------------------------------------------------------------------
